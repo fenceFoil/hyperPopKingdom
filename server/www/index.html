@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="icon" href="favicon.ico">
+    <link rel="stylesheet" href="normalize.css">
+    <title>Hyper Pop Kingdom</title>
+    <style>
+        #app {
+            background-color: black;
+
+            min-height: 100dvh;
+            margin: 0;
+            color: ivory;
+            display: grid;
+            flex-direction: column;
+            place-items: center;
+            font-size: 3vmin;
+            font-family: sans-serif;
+
+            user-select: none;
+        }
+
+        #bubbleScene {
+            aspect-ratio: 4/6;
+            overflow: hidden;
+            width: 100%;
+            max-width: 600px;
+            touch-action: none;
+        }
+
+        #bubbleGrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr; 
+            grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr; 
+            gap: 0px 0px; 
+            width: 100%;
+            height: 100%;
+        }
+
+        .bubble {
+            --bubbleimg: url('rawbubble/bubble1raw.png');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-image: var(--bubbleimg);
+            user-select: none;
+            display: block;
+            aspect-ratio: 1;
+            position: relative;
+        }
+        
+        .bubblefilter {
+            --unpoppedColor: yellowgreen;
+            position: absolute;
+            top: 0; bottom: 0; left:0; right:0;
+            background-color: var(--unpoppedColor);
+            mix-blend-mode: multiply;
+            content: " ";
+        }
+
+        .popped .bubblefilter {
+            background-color: gray;
+            filter: brightness(0.7);
+        }
+
+        .popped {
+            /*filter: brightness(0.6);*/
+        }
+
+        .unpopped {
+
+        }
+
+        #playerIcon {
+            font-size: 6em;
+            background-color: #222;
+            border-radius: 50%;
+            aspect-ratio: 1;
+            display: grid;
+            place-items: center;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div id="app" x-data="d"> <!--  @click="this.hahaSound.play()" -->
+        <div id="bubbleScene">
+            <div id="bubbleGrid">
+                <template x-for="currBubble in bubbleScene.bubbles">
+                    <div class="bubble" :class="currBubble.popped ? 'popped':'unpopped'" :style="{'--bubbleimg':currBubble.image}" @mousedown="onPop(currBubble)" @touchstart="onPop(currBubble)">
+                        <div class="bubblefilter" :style="{'--unpoppedColor':bubbleScene.bubbleColor}"></div>
+                    </div>
+                </template>
+            </div>()
+        </div>
+        <!--div id="tray">
+            <div id="playerIcon" @touchstart="onPlayerIcon()" @mousedown="onPlayerIcon()">
+                🍆
+            </div>
+        </div-->
+    </div>
+    <script src="alpine.3.9.6.min.js" defer></script>
+    <script src="chance.min.js"></script>
+    <script src="howler.min.js"></script>
+    <script>
+                function makeNewBubbleScene() {
+                    return {
+                        width: 4,
+                        height: 6,
+                        bubbleColor: chance.pickone([
+                            "pink",
+                            "yellowgreen",
+                            "deepskyblue",
+                            "gold",
+                            "tomato",
+                            'orangered',
+                            "lavender",
+                            "yellowgreen","yellowgreen","yellowgreen","yellowgreen","yellowgreen","yellowgreen","yellowgreen","yellowgreen","yellowgreen","yellowgreen","yellowgreen","yellowgreen","yellowgreen","yellowgreen","yellowgreen","yellowgreen","yellowgreen","yellowgreen",
+                        ]),
+                        bubbles: Array(4*6).fill({}).map(u => ({
+                            popped: false,
+                            image: `url("rawbubble/bubbleraw${chance.pickone(['1', '2', '3'])}.png")`,
+                            //rotation: `${chance.pickone(['0', '90', '180', '270'])}deg`,
+                        })),
+                        
+                    }
+                }
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('d', () => ({
+                //hahaSound: new Howl({src: ['haha.mp3']}),
+                sounds: {
+                    pops: [
+                        new Howl({src: ['sound/pop1.ogg']}),
+                    ]
+                },
+                bubbleScene: makeNewBubbleScene(),
+                
+                async init() {
+                },
+
+                async onPlayerIcon() {
+                    navigator.vibrate(150);
+                    if (this.bubbleScene.bubbles.some(b => b.popped)) {
+                        this.bubbleScene = makeNewBubbleScene();
+                    }
+                },
+
+                async onPop(bubble){
+                    if (!bubble.popped) {
+                        bubble.popped = true;
+                        sound = this.sounds.pops[0];
+                        sound.rate(chance.floating({ min: 0.5, max: 2 }));
+                        sound.play();
+                        navigator.vibrate(150);
+
+                        if (this.bubbleScene.bubbles.every(b => b.popped)) {
+                            setTimeout(() => this.bubbleScene = makeNewBubbleScene(), 400);
+                        }
+                    }
+                }
+            }));
+        });
+    </script>
+</body>
+</html>
